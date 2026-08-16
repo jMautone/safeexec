@@ -31,3 +31,4 @@ Servicio API que ejecuta código generado por IA en sandboxes aislados y efímer
 - `brain/sandboxing-ejecucion-segura-codigo-ia-structure.md` — estructura de carpetas
 - `brain/sandboxing-ejecucion-segura-codigo-ia-principles.md` — principios de código
 - `brain/sandboxing-ejecucion-segura-codigo-ia-roadmap.md` — fases con criterios de aceptación
+- `brain/sandboxing-ejecucion-segura-codigo-ia-implementation.md` — estado de implementación y decisiones tomadas

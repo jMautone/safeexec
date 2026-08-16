@@ -25,11 +25,11 @@ links:
 Repo ejecutable con esqueleto api-service, observabilidad mínima y CI verde.
 
 ### Tareas
-- [ ] Inicializar proyecto Python 3.13 + FastAPI + pydantic v2 con estructura por features (api/domain/adapters)
-- [ ] Configurar config.py con pydantic-settings y .env.example
-- [ ] Agregar logging JSON con request id, endpoint /healthz
-- [ ] Configurar Dockerfile + docker compose (app + Postgres)
-- [ ] Configurar CI: pytest + ruff (lint) + mypy strict; README con setup en ≤3 comandos
+- [x] Inicializar proyecto Python 3.13 + FastAPI + pydantic v2 con estructura por features (api/domain/adapters)
+- [x] Configurar config.py con pydantic-settings y .env.example
+- [x] Agregar logging JSON con request id, endpoint /healthz
+- [x] Configurar Dockerfile + docker compose (app + Postgres)
+- [x] Configurar CI: pytest + ruff (lint) + mypy strict; README con setup en ≤3 comandos
 
 ### Criterios de aceptación
 - `docker compose up` levanta app y responde 200 en /healthz
@@ -42,11 +42,11 @@ Repo ejecutable con esqueleto api-service, observabilidad mínima y CI verde.
 Modelar Execution, contrato Sandbox y política de límites, testeados sin infraestructura.
 
 ### Tareas
-- [ ] Definir models.py: ExecutionRequest, ExecutionResult, entidad Execution, enum Language
-- [ ] Definir interfaz Sandbox (run(spec) -> SandboxResult) en domain
-- [ ] Implementar política de límites: defaults seguros y validación de rangos
-- [ ] Escribir FakeSandbox para tests
-- [ ] TDD del servicio de dominio que orquesta validación → ejecución → resultado
+- [x] Definir models.py: ExecutionRequest, ExecutionResult, entidad Execution, enum Language
+- [x] Definir interfaz Sandbox (run(spec) -> SandboxResult) en domain
+- [x] Implementar política de límites: defaults seguros y validación de rangos
+- [x] Escribir FakeSandbox para tests
+- [x] TDD del servicio de dominio que orquesta validación → ejecución → resultado
 
 ### Criterios de aceptación
 - Tests de dominio pasan usando FakeSandbox sin Docker ni DB
@@ -58,11 +58,11 @@ Modelar Execution, contrato Sandbox y política de límites, testeados sin infra
 Exponer el endpoint HTTP thin con validación de borde e idempotencia.
 
 ### Tareas
-- [ ] Router /v1/executions que valida payload y delega al dominio
-- [ ] Validación pydantic: allowlist de lenguajes, tamaño máximo de código, stdin
-- [ ] Persistir Execution + client_request_id en Postgres (SQLAlchemy 2 + alembic)
-- [ ] Idempotencia: mismo client_request_id devuelve el resultado previo
-- [ ] Tests de API con httpx AsyncClient y FakeSandbox inyectado por Depends override
+- [x] Router /v1/executions que valida payload y delega al dominio
+- [x] Validación pydantic: allowlist de lenguajes, tamaño máximo de código, stdin
+- [x] Persistir Execution + client_request_id en Postgres (SQLAlchemy 2 + alembic)
+- [x] Idempotencia: mismo client_request_id devuelve el resultado previo
+- [x] Tests de API con httpx AsyncClient y FakeSandbox inyectado por Depends override
 
 ### Criterios de aceptación
 - POST válido devuelve 200 con schema de resultado completo
@@ -75,11 +75,11 @@ Exponer el endpoint HTTP thin con validación de borde e idempotencia.
 Implementar ContainerSandbox con aislamiento y límites forzados reales.
 
 ### Tareas
-- [ ] Implementar ContainerSandbox con Docker SDK: contenedor efímero, no-root, sin red, read-only + tmpfs
-- [ ] Forzar límites: --memory (OOM), --cpus, timeout wall-clock con kill, truncado de output
-- [ ] Imágenes base mínimas para Python y Node
-- [ ] Timeout explícito en toda llamada al daemon; manejo explícito de fallos del daemon
-- [ ] Contract tests del ejecutor real: ejecutan código real y verifican aislamiento (sin red, límites aplicados)
+- [x] Implementar ContainerSandbox con Docker SDK: contenedor efímero, no-root, sin red, read-only + tmpfs
+- [x] Forzar límites: --memory (OOM), --cpus, timeout wall-clock con kill, truncado de output
+- [x] Imágenes base mínimas para Python y Node
+- [x] Timeout explícito en toda llamada al daemon; manejo explícito de fallos del daemon
+- [x] Contract tests del ejecutor real: ejecutan código real y verifican aislamiento (sin red, límites aplicados)
 
 ### Criterios de aceptación
 - Código que excede memoria reporta oom_killed=true sin colgar el servicio
@@ -93,10 +93,10 @@ Implementar ContainerSandbox con aislamiento y límites forzados reales.
 Métricas de ejecución, degradación con gracia y documentación de operación.
 
 ### Tareas
-- [ ] Métricas: contador de ejecuciones por lenguaje/resultado y latencia
-- [ ] Límite de concurrencia de sandboxes con respuesta clara al saturar (429)
-- [ ] Manejo de errores del ejecutor con degradación graciosa en prod
-- [ ] Runbook breve en README: variables de entorno, límites, requisitos de host para sandboxing
+- [x] Métricas: contador de ejecuciones por lenguaje/resultado y latencia
+- [x] Límite de concurrencia de sandboxes con respuesta clara al saturar (429)
+- [x] Manejo de errores del ejecutor con degradación graciosa en prod
+- [x] Runbook breve en README: variables de entorno, límites, requisitos de host para sandboxing
 
 ### Criterios de aceptación
 - Métricas expuestas y verificadas en test
