@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format check
+        run: uv run ruff format --check .
+      - name: Typecheck
+        run: uv run mypy
+      - name: Unit and API tests
+        run: uv run pytest -m "not contract"
+
+  contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: safeexec
+          POSTGRES_PASSWORD: safeexec
+          POSTGRES_DB: safeexec
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U safeexec"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Migrations apply and revert cleanly
+        env:
+          SAFEEXEC_DATABASE_URL: postgresql+asyncpg://safeexec:safeexec@localhost:5432/safeexec
+        run: |
+          uv run alembic upgrade head
+          uv run alembic downgrade base
+          uv run alembic upgrade head
+      - name: Contract tests (real container executor)
+        run: uv run pytest -m contract
