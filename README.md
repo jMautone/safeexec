@@ -44,6 +44,27 @@ Response:
 }
 ```
 
+## Example: the LLM correction loop
+
+[`examples/llm_loop.py`](examples/llm_loop.py) is the use case this service is built
+for: Claude writes a program, SafeExec runs it in a single-use container, and any
+failure comes back as *data* the model uses to fix its own code and try again.
+
+```bash
+docker compose up --build -d
+
+# scripted author: same loop, no API key, shows a deliberate crash + fix
+uv run --group examples python examples/llm_loop.py --offline
+
+# real Claude, needs ANTHROPIC_API_KEY (or `ant auth login`)
+uv run --group examples python examples/llm_loop.py "crecimiento mes a mes de estas ventas"
+```
+
+Two details worth copying into your own client: the `client_request_id` carries the
+attempt number (reusing one would replay the stored result instead of running the
+corrected code), and timeout/OOM are read off the 200 response rather than caught as
+errors — that is what makes them usable as feedback.
+
 ## API
 
 ### `POST /v1/executions`
