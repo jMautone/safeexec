@@ -8,8 +8,8 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - name: Install dependencies
         run: uv sync --frozen
       - name: Lint
@@ -38,8 +38,8 @@ jobs:
           --health-timeout 3s
           --health-retries 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
       - name: Install dependencies
         run: uv sync --frozen
       - name: Migrations apply and revert cleanly
