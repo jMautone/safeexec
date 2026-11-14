@@ -4,6 +4,16 @@ version = "0.1.0"
 description = "API service that runs AI-generated code inside ephemeral, locked-down sandboxes"
 readme = "README.md"
 requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["sandbox", "code-execution", "llm", "ai-agents", "docker", "fastapi"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Framework :: FastAPI",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security",
+]
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
@@ -15,6 +25,10 @@ dependencies = [
     "docker>=7.1",
     "prometheus-client>=0.20",
 ]
+
+[project.urls]
+Repository = "https://github.com/jMautone/safeexec"
+Changelog = "https://github.com/jMautone/safeexec/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
