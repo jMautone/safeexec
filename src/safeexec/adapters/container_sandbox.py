@@ -1,7 +1,7 @@
 """Ephemeral, single-use Docker container sandbox.
 
 Boundary with the untyped Docker SDK; this is the only module allowed to
-touch it. Requirements enforced here (see brain/ hard rules): non-root user,
+touch it. Requirements enforced here (see AGENTS.md hard rules): non-root user,
 no network, read-only rootfs with a bounded tmpfs, hard CPU/memory limits,
 wall-clock timeout with kill, single-use container always removed.
 
@@ -180,12 +180,26 @@ class ContainerSandbox:
 
     @staticmethod
     def _read_stream(container: Any, limits: ResourceLimits, *, stdout: bool) -> tuple[str, bool]:
+        # Stream and stop at the cap: a program that floods stdout must not be
+        # able to grow this process's memory beyond max_output_bytes.
+        cap = limits.max_output_bytes
+        buffer = bytearray()
+        truncated = False
         try:
-            raw: bytes = container.logs(stdout=stdout, stderr=not stdout)
+            stream = container.logs(stdout=stdout, stderr=not stdout, stream=True, follow=False)
+            try:
+                for chunk in stream:
+                    remaining = cap - len(buffer)
+                    if len(chunk) > remaining:
+                        buffer += chunk[:remaining]
+                        truncated = True
+                        break
+                    buffer += chunk
+            finally:
+                stream.close()
         except DockerException:
             return "", False
-        truncated = len(raw) > limits.max_output_bytes
-        return raw[: limits.max_output_bytes].decode("utf-8", errors="replace"), truncated
+        return buffer.decode("utf-8", errors="replace"), truncated
 
     @staticmethod
     def _remove(container: Any) -> None:
