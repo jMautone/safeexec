@@ -7,24 +7,11 @@
 **A small, self-hosted HTTP API that runs LLM-generated code in a single-use,
 locked-down container and hands the result back as data.**
 
-<!-- To record the GIF: docker compose up --build -d && vhs docs/demo.tape -->
+![SafeExec demo: an infinite loop is killed at the limit, then an LLM loop fixes its own crashing code](docs/demo/demo.gif)
 
-```text
-=== attempt 1/3 ===
---- failed in 235 ms ---
-KeyError: slice(1, None, None)
-Fix it and return the complete program again.
-
-=== attempt 2/3 ===
---- ok in 201 ms ---
-mes 2: 150.0%
-mes 3: 24.0%
-mes 4: -6.5%
-mes 5: 43.1%
-```
-
-*The [LLM correction loop](#example-the-llm-correction-loop): the model's code crashes
-inside the sandbox, the traceback goes back to the model, the fixed version runs.*
+*Recorded from a real run with [`docs/demo/render.py`](docs/demo/render.py). Second half: the
+[LLM correction loop](#example-the-llm-correction-loop), where the model's code crashes inside
+the sandbox, the traceback goes back to the model and the fixed version runs.*
 
 ## Why
 
