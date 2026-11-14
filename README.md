@@ -1,14 +1,48 @@
 # SafeExec
 
-API service that executes AI-generated code inside ephemeral, locked-down sandboxes.
-Send code + language to a versioned HTTP endpoint; get back stdout/stderr/exit code/
-duration with strict CPU, memory, time, and network limits enforced.
+[![CI](https://github.com/jMautone/safeexec/actions/workflows/ci.yml/badge.svg)](https://github.com/jMautone/safeexec/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)
+
+**A small, self-hosted HTTP API that runs LLM-generated code in a single-use,
+locked-down container and hands the result back as data.**
+
+<!-- To record the GIF: docker compose up --build -d && vhs docs/demo.tape -->
+
+```text
+=== attempt 1/3 ===
+--- failed in 235 ms ---
+KeyError: slice(1, None, None)
+Fix it and return the complete program again.
+
+=== attempt 2/3 ===
+--- ok in 201 ms ---
+mes 2: 150.0%
+mes 3: 24.0%
+mes 4: -6.5%
+mes 5: 43.1%
+```
+
+*The [LLM correction loop](#example-the-llm-correction-loop): the model's code crashes
+inside the sandbox, the traceback goes back to the model, the fixed version runs.*
+
+## Why
+
+When an agent writes code, someone has to run it, and running it on your machine or
+inside your API process is the wrong place. Hosted sandboxes (E2B, Modal, Daytona)
+solve this well but are a platform to adopt. SafeExec is the opposite end: one
+endpoint, one `docker compose up`, under 1,000 lines of service code you can read in an afternoon, with
+every hardening flag visible in [one file](src/safeexec/adapters/container_sandbox.py).
 
 Each execution runs in a **single-use container**: non-root user, no network,
-read-only root filesystem with a small bounded tmpfs, hard memory/CPU caps and a
-wall-clock timeout. The container is destroyed after every run, never reused. The
-executor lives behind a `Sandbox` interface so it can be swapped for gVisor/MicroVMs
-without touching the domain.
+read-only root filesystem with a small bounded tmpfs, no swap, CPU and process caps,
+all capabilities dropped and a wall-clock timeout. The container is destroyed after
+every run, never reused. The executor lives behind a `Sandbox` interface so it can be
+swapped for gVisor or a MicroVM without touching the domain.
+
+> **Status: reference project.** v0.1.0 is complete and tested, including contract
+> tests against real containers. It is not actively developed. Use it to learn from,
+> fork, or run on a trusted host; see [Alternatives](#alternatives) for production.
 
 ## Quickstart (≤3 commands)
 
@@ -64,6 +98,37 @@ Two details worth copying into your own client: the `client_request_id` carries 
 attempt number (reusing one would replay the stored result instead of running the
 corrected code), and timeout/OOM are read off the 200 response rather than caught as
 errors — that is what makes them usable as feedback.
+
+## How it works
+
+```mermaid
+sequenceDiagram
+    participant C as Client (LLM loop)
+    participant A as API /v1/executions
+    participant S as ExecutionService
+    participant DB as Postgres
+    participant D as Docker daemon
+    participant X as Sandbox container
+    C->>A: language, code, limits, client_request_id
+    A->>A: validate (allowlist, sizes)
+    A->>S: execute
+    S->>DB: seen this client_request_id?
+    DB-->>S: stored result (if any, return it)
+    S->>S: resolve limits (defaults, hard max)
+    S->>D: create (no net, ro fs, non-root, caps)
+    D->>X: start
+    X-->>D: exit / killed at timeout / OOM
+    S->>D: read logs up to max_output_bytes, remove
+    S->>DB: save result
+    A-->>C: 200 stdout, stderr, exit_code, timed_out, oom_killed
+```
+
+- **Failures are results.** Timeout, OOM and truncated output come back in a 200 so a
+  model can read them ([ADR 0002](docs/decisions/0002-failures-are-results.md)).
+- **Idempotent retries.** Same `client_request_id`, same stored result, no second run
+  ([ADR 0003](docs/decisions/0003-postgres-for-idempotency.md)).
+- **Swappable isolation.** The domain only knows the `Sandbox` protocol
+  ([ADR 0001](docs/decisions/0001-ephemeral-containers-behind-sandbox-interface.md)).
 
 ## API
 
@@ -149,4 +214,35 @@ src/safeexec/
   config.py   pydantic-settings from env
 ```
 
-Project notes and decisions live in `brain/` (source of truth for scope and rules).
+Design decisions are in [`docs/decisions/`](docs/decisions/). The original planning
+notes (in Spanish) are in [`docs/plan/`](docs/plan/).
+
+
+## Alternatives
+
+SafeExec is not the strongest sandbox out there. Pick something else when:
+
+| Tool | Use it instead when |
+| --- | --- |
+| [E2B](https://e2b.dev) | You want Firecracker MicroVMs, SDKs, long-lived sessions and a hosted option (also self-hostable). |
+| [microsandbox](https://github.com/superradcompany/microsandbox) | You want MicroVM isolation self-hosted on your own machine. |
+| [Piston](https://github.com/engineer-man/piston) | You need dozens of languages behind a similar HTTP API. |
+| [Judge0](https://judge0.com) | You are grading code against test cases (online judge). |
+| [Daytona](https://daytona.io) / [Modal](https://modal.com) | You need full dev environments or GPU sandboxes as a service. |
+| Claude's code execution tool | You only need code runs inside a Claude conversation and don't want to host anything. |
+
+Pick SafeExec when you want a small, readable, self-hosted service whose isolation
+settings and failure semantics you can audit and change in one place.
+
+## Roadmap
+
+Reference project: no new features are planned. Natural next steps for a fork:
+
+- SQLite or in-memory repository for single-process setups (drop Postgres).
+- A gVisor or Firecracker `Sandbox` implementation for untrusted public traffic.
+- API keys and per-client rate limits.
+- An MCP server wrapper so coding agents can call it as a tool.
+
+## License
+
+[MIT](LICENSE)
